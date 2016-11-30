@@ -22,14 +22,19 @@ fn patterns_match(b: &[u8]) -> bool {
 #[no_mangle]
 pub unsafe extern fn is_valid(password: *mut i8) -> bool {
     let password = CString::from_raw(password);
+    _is_valid(password.as_bytes())
+}
 
+fn _is_valid(password: &[u8]) -> bool {
+    if password.len() < 12 { return false; }
+    
     let mut lowercase = false;
     let mut uppercase = false;
     let mut numeric = false;
     let mut symbol = false;
 
-    for byte in password.as_bytes() {
-        match *byte {
+    for &byte in password {
+        match byte {
             b'A'...b'Z' => uppercase = true,
             b'a'...b'z' => lowercase = true,
             b'0'...b'9' => numeric = true,
@@ -60,25 +65,30 @@ mod tests {
     #[test]
     fn valid_passwords_are_allowed() {
         assert!(super::patterns_match("paSsword$123".as_ref()));
+        assert!(super::_is_valid("paSsword$123".as_ref()));
     }
 
     #[test]
     fn must_have_caps() {
-        assert!(!super::patterns_match("password$123".as_ref()))
+        assert!(!super::patterns_match("password$123".as_ref()));
+        assert!(!super::_is_valid("password$123".as_ref()));
     }
 
     #[test]
     fn must_have_lowercase() {
         assert!(!super::patterns_match("PASSWORD$123".as_ref()));
+        assert!(!super::_is_valid("PASSWORD$123".as_ref()));
     }
 
     #[test]
     fn must_have_symbols() {
         assert!(!super::patterns_match("paSsword$%@#".as_ref()));
+        assert!(!super::_is_valid("paSsword$%@#".as_ref()));
     }
 
     #[test]
     fn must_be_12_chars_long() {
         assert!(!super::patterns_match("pSwrd$12".as_ref()));
+        assert!(!super::_is_valid("pSwrd$12".as_ref()));
     }
 }
